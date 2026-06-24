@@ -1,200 +1,205 @@
 # Tidal Audio Switcher
 
-Kleine Windows-WPF-App zum Umschalten zwischen TIDAL **exclusive/shared** und dem Windows-Standard-Audiogerät.
+A lightweight Windows utility that makes it easy to switch between **TIDAL Exclusive Mode** and normal Windows audio playback with a single click.
 
-## Screenshots
+Perfect for users who listen to music through a dedicated DAC and want to quickly switch between critical listening and everyday desktop use.
 
-### Main Window
+![Main Window](Assets/audioswitcher.png)
 
-![Main Window](audioswitcher.png)
+![Compact Mode](Assets/compactmode.png)
 
-### Compact Mode
+---
 
-![Compact Mode](compactmode.png)
+## Features
 
-## Einstiegspunkt für Endnutzer
-
-Nach der Installation starten Endnutzer **nur**:
-
-```text
-TidalAudioSwitcher.exe
-```
-
-Alternativ: `Start Tidal Audio Switcher.bat` im gleichen Ordner.
-
-Der Launcher (`TidalAudioSwitcher.exe`) übernimmt:
-
-1. Prüfen, ob TIDAL läuft
-2. Falls TIDAL ohne CDP läuft → Dialog mit **TIDAL schließen und neu starten** / **Abbrechen**
-3. Falls TIDAL nicht läuft → TIDAL mit `--remote-debugging-port=9222` starten
-4. Warten auf `http://127.0.0.1:9222/json/list`
-5. UI starten (`TidalAudioSwitcher.UI.exe`, intern)
-6. Warten, bis das UI-Fenster sichtbar ist
-7. Launcher beendet sich
+* One-click switch between Music Mode and Normal Mode
+* Automatically controls TIDAL playback devices
+* Switches TIDAL between Exclusive and Shared Mode
+* Automatically changes the Windows default audio device
+* Compact always-on-top overlay mode
+* Remembers selected devices
+* Remembers window position and compact mode state
+* Automatic TIDAL startup with required launch parameters
+* Friendly error handling and diagnostics
 
 ---
 
 ## Why?
 
-TIDAL Exclusive Mode provides the best possible audio path to a DAC,
-but it prevents normal desktop audio routing.
+TIDAL Exclusive Mode provides the cleanest possible audio path to a DAC by taking exclusive control of the selected playback device.
 
-Tidal Audio Switcher makes it possible to switch between:
+However, this can make switching between dedicated music listening and normal desktop usage inconvenient.
 
-- Dedicated music listening (Exclusive Mode)
-- Everyday desktop usage (Shared Mode)
+Tidal Audio Switcher solves this by providing two simple modes:
 
-with a single click.
+### Music Mode
+
+* TIDAL switches to Exclusive Mode
+* Windows audio is redirected to a separate Silent Device
+* Your DAC is dedicated entirely to TIDAL playback
+
+### Normal Mode
+
+* TIDAL switches back to Shared Mode
+* Windows default audio is restored to your selected playback device
+* All applications can use the device normally again
+
+---
+
+## Requirements
+
+* Windows 10 or Windows 11
+* TIDAL Desktop
+* .NET 8 Desktop Runtime
+* At least one playback device
+
+Recommended:
+
+* A dedicated DAC for TIDAL playback
+* A second playback device or virtual audio device as Silent Device
+
+---
+
+## Silent Device Recommendation
+
+If you only have a single playback device, a virtual audio device works perfectly as a Silent Device.
+
+Recommended:
+
+[VB-Audio Virtual Cable](https://vb-audio.com/Cable/?utm_source=chatgpt.com)
+
+After installation, select the VB-Audio device as your Silent Device inside Tidal Audio Switcher.
+
+---
 
 ## Installation
 
-### Installationsort
+Download the latest release from GitHub Releases.
 
-Die Anwendung kann in **beliebigen Ordnern** installiert werden, z. B.:
+Extract:
+
+```text
+TidalAudioSwitcher-v1.0.zip
+```
+
+and start:
+
+```text
+TidalAudioSwitcher.exe
+```
+
+No additional configuration is required.
+
+The application can be installed anywhere, for example:
 
 ```text
 C:\Program Files\TidalAudioSwitcher
 D:\Tools\TidalAudioSwitcher
 ```
 
-Sie muss **nicht** im TIDAL-Ordner liegen. TIDAL wird separat unter `%LocalAppData%\TIDAL\` gesucht.
+It does not need to be installed inside the TIDAL directory.
 
-**Wichtig:** `TidalAudioSwitcher.exe` und `TidalAudioSwitcher.UI.exe` müssen **im selben Ordner** bleiben (inkl. aller `.dll`- und `.json`-Dateien aus dem Release-Paket).
+---
 
-### Voraussetzungen
+## First-Time Setup
 
-| Anforderung | Details |
-|-------------|---------|
-| **Betriebssystem** | Windows 10 oder 11 (64-bit) |
-| **.NET 8 Desktop Runtime** | [Download .NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) — Runtime, nicht SDK |
-| **TIDAL Desktop** | Offizielle Desktop-App, installiert unter `%LocalAppData%\TIDAL\app-*\TIDAL.exe` |
-| **Audiogeräte** | Mindestens ein Ausgabegerät; für Music Mode ein zweites Gerät als Silent Device |
+1. Start `TidalAudioSwitcher.exe`
+2. Select your TIDAL Device
+3. Select your Silent Device
+4. Activate Music Mode
 
-### Release-Paket (Endnutzer)
+Your selections are automatically remembered for future launches.
 
-Entpacken von `TidalAudioSwitcher-v1.0.zip`:
+---
+
+## Compact Mode
+
+Compact Mode provides a small always-on-top overlay that allows instant switching between Music Mode and Normal Mode.
+
+The overlay:
+
+* stays above TIDAL
+* remembers its position
+* remembers its visibility state
+* can be moved freely
+
+---
+
+## TIDAL Integration
+
+Tidal Audio Switcher communicates with TIDAL through Chrome DevTools Protocol (CDP).
+
+The launcher automatically:
+
+1. Detects whether TIDAL is running
+2. Starts TIDAL with the required parameters if necessary
+3. Waits for CDP to become available
+4. Launches the Audio Switcher UI
+
+No manual launch arguments are required.
+
+---
+
+## Important Note About Exclusive Mode
+
+TIDAL does not always update its own user interface correctly when playback devices are changed programmatically.
+
+This means:
+
+* Exclusive Mode may be active even if TIDAL does not visually indicate it
+* Music Mode always requests Exclusive Mode
+* Normal Mode always restores Shared Mode
+
+If in doubt, check the application's log file.
+
+---
+
+## Troubleshooting
+
+### TIDAL Was Started Normally
+
+If Music Mode is unavailable:
+
+1. Close TIDAL
+2. Start Tidal Audio Switcher
+3. Allow the launcher to restart TIDAL automatically
+
+### Device Missing
+
+This may happen if:
+
+* a DAC was disconnected
+* a USB device was renamed
+* VB-Audio Virtual Cable was removed
+
+Simply reopen the application and reselect your devices.
+
+### Logs
+
+Diagnostics are written to:
 
 ```text
-TidalAudioSwitcher-v1.0/
-├── TidalAudioSwitcher.exe          ← starten
-├── TidalAudioSwitcher.UI.exe       ← intern, nicht manuell starten
-├── TidalAudioSwitcher*.dll / *.json
-├── NAudio*.dll
-├── Assets/
-├── README.md
-└── Start Tidal Audio Switcher.bat
+%TEMP%\TidalAudioSwitcher.log
 ```
 
-Details zur Distribution: siehe [DISTRIBUTION.md](DISTRIBUTION.md).
-
-### Silent Device: VB-Audio Virtual Cable (empfohlen)
-
-Für **Music Mode** wird ein zweites Audiogerät benötigt, das als **Silent Device** dient (Windows-Standard wird darauf umgeschaltet, während TIDAL exclusive auf das TIDAL Device spielt).
-
-**VB-Audio Virtual Cable** eignet sich dafür gut:
-
-- Offizieller Download: [https://vb-audio.com/Cable/](https://vb-audio.com/Cable/)
-- Nach der Installation erscheint ein Gerät wie **CABLE Input** / **VB-Audio Virtual Cable** in der Geräteliste
-- Dieses Gerät als **Silent Device** wählen
-
-Die App bevorzugt beim ersten Start automatisch Geräte mit „CABLE“ oder „VB-Audio“ im Namen als Silent Device, sofern vorhanden.
-
-### Exclusive Mode in TIDAL
-
-Im **Music Mode** schaltet die App TIDAL per CDP auf **exclusive** Wiedergabe auf dem gewählten TIDAL Device.
-
-TIDAL zeigt den Exclusive-/Shared-Status **nicht immer zuverlässig** in der eigenen UI an. Das bedeutet:
-
-- Exclusive Mode kann **aktiv sein**, auch wenn TIDAL dies nicht sichtbar anzeigt
-- Maßgeblich ist das Verhalten der App (Music Mode = exclusive, Normal Mode = shared)
-- Bei Problemen: `%TEMP%\TidalAudioSwitcher.log` prüfen
-
----
-
-## Build & Release (Entwickler)
-
-```powershell
-cd TidalAudioSwitcher
-dotnet build -c Release
-.\scripts\Package-Release.ps1 -Configuration Release -Version 1.0
-```
-
-Ausgabe: `release/TidalAudioSwitcher-v1.0/` und `.zip` — **nicht** der rohe `bin/`-Ordner.
-
-Version und Metadaten: `Directory.Build.props`. Optional: `Assets/app.ico` für Anwendungsicons.
-
----
-
-## Warum der Debug-Port?
-
-Der Audio Switcher steuert TIDAL über **Chrome DevTools Protocol (CDP)**. TIDAL aktiviert CDP nur mit:
+Settings are stored in:
 
 ```text
---remote-debugging-port=9222
-```
-
-Ein normaler TIDAL-Start funktioniert nicht mit Music/Normal Mode.
-
-## Was passiert bei normalem TIDAL-Start?
-
-| Situation | Verhalten |
-|-----------|-----------|
-| TIDAL nicht gestartet | Launcher startet TIDAL automatisch |
-| TIDAL läuft ohne Debug-Port | Dialog: TIDAL schließen und neu starten |
-| TIDAL mit Debug-Port bereit | UI startet sofort |
-| UI läuft, CDP fehlt später | Fallback-Dialog **Automatisch starten** in der UI |
-
-Diagnose-Log: `%TEMP%\TidalAudioSwitcher.log`
-
-Einstellungen: `%LocalAppData%\TidalAudioSwitcher\settings.json`
-
----
-
-## Entwicklung
-
-```powershell
-# Produktions-Flow (Launcher + UI)
-dotnet run --project TidalAudioSwitcher.Launcher -c Release
-
-# Nur UI (ohne Launcher, für Entwicklung)
-dotnet run --project TidalAudioSwitcher.App -c Release
+%LocalAppData%\TidalAudioSwitcher\settings.json
 ```
 
 ---
-
-## Bedienung
-
-1. **TIDAL Device** und **Silent Device** wählen
-2. **Music Mode** — Silent Device wird Windows-Standard, TIDAL exclusive
-3. **Normal Mode** — TIDAL shared, Windows-Standard auf TIDAL Device
-4. **Compact Mode** — kleines Always-on-Top-Fenster mit Music-Toggle
-
----
-
-## Projektstruktur
-
-```text
-TidalAudioSwitcher/
-├── Directory.Build.props
-├── DISTRIBUTION.md
-├── scripts/Package-Release.ps1
-├── Assets/                          # optional app.ico
-├── TidalAudioSwitcher.sln
-├── TidalAudioSwitcher.Launcher/     # TidalAudioSwitcher.exe
-└── TidalAudioSwitcher.App/          # TidalAudioSwitcher.UI.exe
-```
-
-## Architektur
-
-```text
-TidalAudioSwitcher.exe (Launcher)
-  → TIDAL.exe (--remote-debugging-port=9222)   [Pfad: %LocalAppData%\TIDAL\]
-  → TidalAudioSwitcher.UI.exe                  [Pfad: gleicher Ordner wie Launcher]
-        └── AudioSwitcherService → CDP :9222
-```
-
 
 ## Disclaimer
 
-This project is not affiliated with, endorsed by, or maintained by TIDAL.
+This project is an unofficial utility and is not affiliated with, endorsed by, or maintained by TIDAL.
+
 TIDAL is a trademark of its respective owners.
+
+Use this software at your own risk.
+
+---
+
+## License
+
+MIT License
