@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>TidalAudioSwitcher</AssemblyName>
+    <RootNamespace>TidalAudioSwitcher.Launcher</RootNamespace>
+    <Description>Tidal Audio Switcher</Description>
+  </PropertyGroup>
+
+  <Target Name="BuildUiApp" BeforeTargets="CopyUiApp">
+    <MSBuild Projects="..\TidalAudioSwitcher.App\TidalAudioSwitcher.App.csproj"
+             Properties="Configuration=$(Configuration)"
+             Targets="Build" />
+  </Target>
+
+  <Target Name="CopyUiApp" AfterTargets="Build">
+    <ItemGroup>
+      <UiOutput Include="..\TidalAudioSwitcher.App\bin\$(Configuration)\net8.0-windows\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(UiOutput)"
+          DestinationFiles="@(UiOutput->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

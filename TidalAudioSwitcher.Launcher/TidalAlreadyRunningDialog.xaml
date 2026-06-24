@@ -1,0 +1,38 @@
+<Window x:Class="TidalAudioSwitcher.Launcher.TidalAlreadyRunningDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="TIDAL-Verbindung"
+        Icon="/Assets/app.ico"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True"
+        WindowStyle="ToolWindow"
+        Background="#1E1E1E"
+        Foreground="#F0F0F0"
+        FontFamily="Segoe UI"
+        FontSize="14"
+        MinWidth="420"
+        MaxWidth="520">
+    <Border Padding="20">
+        <StackPanel>
+            <TextBlock Text="TIDAL läuft bereits ohne die benötigten Startparameter."
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,16"
+                       LineHeight="20" />
+
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Right">
+                <Button Content="TIDAL schließen und neu starten"
+                        Padding="14,8"
+                        Margin="0,0,8,0"
+                        IsDefault="True"
+                        Click="RestartButton_Click" />
+                <Button Content="Abbrechen"
+                        Padding="14,8"
+                        IsCancel="True"
+                        Click="CancelButton_Click" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>
