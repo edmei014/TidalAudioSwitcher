@@ -16,4 +16,8 @@
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TidalAudioSwitcher.Shared\TidalAudioSwitcher.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

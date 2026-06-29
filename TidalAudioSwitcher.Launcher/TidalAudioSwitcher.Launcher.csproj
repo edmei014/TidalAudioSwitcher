@@ -17,6 +17,10 @@
              Targets="Build" />
   </Target>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TidalAudioSwitcher.Shared\TidalAudioSwitcher.Shared.csproj" />
+  </ItemGroup>
+
   <Target Name="CopyUiApp" AfterTargets="Build">
     <ItemGroup>
       <UiOutput Include="..\TidalAudioSwitcher.App\bin\$(Configuration)\net8.0-windows\**\*.*" />

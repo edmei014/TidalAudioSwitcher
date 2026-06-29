@@ -1,4 +1,4 @@
-namespace TidalAudioSwitcher.App.Services;
+namespace TidalAudioSwitcher.Shared;
 
 public static class TidalLaunchConstants
 {
@@ -7,4 +7,12 @@ public static class TidalLaunchConstants
     public const string DebugPortArgument = "--remote-debugging-port=9222";
 
     public const string RemoteAllowOriginsArgument = "--remote-allow-origins=*";
+}
+
+public enum TidalBootstrapResult
+{
+    Success,
+    TidalNotFound,
+    CloseFailed,
+    CdpTimeout
 }

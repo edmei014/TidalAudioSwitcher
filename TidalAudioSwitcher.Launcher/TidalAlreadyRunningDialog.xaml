@@ -18,12 +18,20 @@
         <StackPanel>
             <TextBlock Text="TIDAL läuft bereits ohne die benötigten Startparameter."
                        TextWrapping="Wrap"
+                       Margin="0,0,0,8"
+                       LineHeight="20" />
+            <TextBlock Text="Damit Music Mode funktioniert, muss TIDAL neu gestartet werden."
+                       TextWrapping="Wrap"
+                       Margin="0,0,0,8"
+                       LineHeight="20" />
+            <TextBlock Text="TIDAL automatisch neu starten?"
+                       TextWrapping="Wrap"
                        Margin="0,0,0,16"
                        LineHeight="20" />
 
             <StackPanel Orientation="Horizontal"
                         HorizontalAlignment="Right">
-                <Button Content="TIDAL schließen und neu starten"
+                <Button Content="TIDAL neu starten"
                         Padding="14,8"
                         Margin="0,0,8,0"
                         IsDefault="True"

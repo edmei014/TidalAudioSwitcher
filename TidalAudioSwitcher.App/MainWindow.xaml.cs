@@ -12,8 +12,8 @@ public partial class MainWindow : Window
     private const string PathRuntimeCompact = "B-runtime";
     private const double CompactWidth = 144;
     private const double CompactHeight = 54;
-    private const double DefaultExpandedWidth = 720;
-    private const double DefaultExpandedHeight = 210;
+    private const double DefaultExpandedWidth = 820;
+    private const double DefaultExpandedHeight = 230;
 
     private WindowLayoutSnapshot? _expandedSnapshot;
     private bool _startCompactRequested;
@@ -236,6 +236,8 @@ public partial class MainWindow : Window
     }
 
     private void CloseWindow_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void MinimizeWindow_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
     private void RestoreWindowPlacement(AppSettings settings)
     {

@@ -37,6 +37,7 @@ $releaseFiles = @(
     "TidalAudioSwitcher.UI.dll",
     "TidalAudioSwitcher.UI.deps.json",
     "TidalAudioSwitcher.UI.runtimeconfig.json",
+    "TidalAudioSwitcher.Shared.dll",
     "NAudio.dll",
     "NAudio.Asio.dll",
     "NAudio.Core.dll",

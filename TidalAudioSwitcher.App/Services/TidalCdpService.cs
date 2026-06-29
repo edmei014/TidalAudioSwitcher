@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text.Json;
 using TidalAudioSwitcher.App.Models;
 using TidalAudioSwitcher.App.Services.Cdp;
+using TidalAudioSwitcher.Shared;
 
 namespace TidalAudioSwitcher.App.Services;
 
@@ -77,9 +78,8 @@ public sealed class TidalCdpService : ITidalCdpService, IDisposable
                 {
                     Status = TidalCdpHealthStatus.TidalRunningWithoutCdp,
                     UserMessage =
-                        "Bitte TIDAL schließen und über „Automatisch starten“ neu starten.\n\n" +
                         "TIDAL läuft derzeit ohne die benötigten Startparameter " +
-                        "(--remote-debugging-port=9222).",
+                        "(--remote-debugging-port=9222). Bitte TidalAudioSwitcher.exe erneut starten.",
                     Detail = ex.Message
                 };
             }
@@ -177,7 +177,7 @@ public sealed class TidalCdpService : ITidalCdpService, IDisposable
             StartupLogger.LogException("TidalCdpService.ConnectToMainPageAsync", ex);
             throw new TidalCdpUserException(
                 "Die Verbindung zu TIDAL konnte nicht hergestellt werden.\n\n" +
-                "Bitte TIDAL schließen und „Automatisch starten“ verwenden.",
+                "Bitte „Restart TIDAL“ verwenden oder TidalAudioSwitcher.exe neu starten.",
                 ex);
         }
     }
@@ -204,7 +204,7 @@ public sealed class TidalCdpService : ITidalCdpService, IDisposable
         if (TidalProcessService.IsTidalRunning())
         {
             return new TidalCdpUserException(
-                "TIDAL läuft ohne Debug-Port. Bitte TIDAL schließen und „Automatisch starten“ verwenden.",
+                "TIDAL läuft ohne Debug-Port. Bitte „Restart TIDAL“ verwenden oder TidalAudioSwitcher.exe neu starten.",
                 ex);
         }
 

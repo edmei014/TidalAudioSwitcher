@@ -136,6 +136,10 @@ The launcher automatically:
 3. Waits for CDP to become available
 4. Launches the Audio Switcher UI
 
+If TIDAL is already running without CDP, the launcher asks whether to restart TIDAL before the UI opens.
+
+The UI assumes TIDAL is ready when it starts. It does not offer startup dialogs, launcher restarts, or TIDAL auto-start.
+
 No manual launch arguments are required.
 
 ---

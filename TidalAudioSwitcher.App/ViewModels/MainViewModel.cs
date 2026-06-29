@@ -8,6 +8,7 @@ using System.Windows.Input;
 using TidalAudioSwitcher.App;
 using TidalAudioSwitcher.App.Models;
 using TidalAudioSwitcher.App.Services;
+using TidalAudioSwitcher.Shared;
 
 namespace TidalAudioSwitcher.App.ViewModels;
 
@@ -16,7 +17,6 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private readonly IAudioSwitcherService _switcher;
     private readonly SettingsService _settings;
     private readonly ITidalCdpService _tidalCdp;
-    private readonly TidalLaunchService _tidalLaunch;
     private readonly CollectionViewSource _tidalDevicesSource;
     private readonly CollectionViewSource _silentDevicesSource;
     private AudioEndpoint? _selectedTidalDevice;
@@ -32,13 +32,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public MainViewModel(
         IAudioSwitcherService switcher,
         SettingsService settings,
-        ITidalCdpService tidalCdp,
-        TidalLaunchService tidalLaunch)
+        ITidalCdpService tidalCdp)
     {
         _switcher = switcher;
         _settings = settings;
         _tidalCdp = tidalCdp;
-        _tidalLaunch = tidalLaunch;
         WindowsDevices = new ObservableCollection<AudioEndpoint>();
 
         _tidalDevicesSource = new CollectionViewSource { Source = WindowsDevices };
@@ -54,6 +52,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ToggleModeCommand = new AsyncRelayCommand(
             () => ApplyModeAsync(IsMusicModeActive ? AudioMode.Normal : AudioMode.Music),
             CanToggleMode);
+        RestartTidalCommand = new AsyncRelayCommand(RestartTidalAsync, () => !IsBusy);
     }
 
     public ObservableCollection<AudioEndpoint> WindowsDevices { get; }
@@ -152,6 +151,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand MusicModeCommand { get; }
     public ICommand NormalModeCommand { get; }
     public ICommand ToggleModeCommand { get; }
+    public ICommand RestartTidalCommand { get; }
 
     public async Task InitializeAsync()
     {
@@ -162,103 +162,45 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         _initialized = true;
         await LoadDevicesAsync();
-        await CheckTidalConnectionAsync();
     }
 
-    private async Task CheckTidalConnectionAsync()
+    private Task RestartTidalAsync()
     {
-        var health = await _tidalCdp.CheckHealthAsync();
-        if (health.IsReady)
+        return RunBusyAsync("TIDAL wird neu gestartet …", async () =>
         {
-            return;
-        }
+            var progress = new Progress<string>(message => StatusText = message);
+            var result = await TidalBootstrap.RestartTidalAsync(progress, TimeSpan.FromSeconds(45));
 
-        StartupLogger.Log($"TIDAL CDP health: {health.Status} — {health.Detail ?? health.UserMessage}");
-
-        if (ShouldOfferAutoStart(health))
-        {
-            await OfferTidalLaunchAsync();
-            return;
-        }
-
-        MessageBox.Show(
-            health.UserMessage,
-            "TIDAL-Verbindung",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
-    }
-
-    private static bool ShouldOfferAutoStart(TidalCdpHealthResult health) =>
-        health.Status is TidalCdpHealthStatus.TidalNotRunning
-            or TidalCdpHealthStatus.TidalRunningWithoutCdp;
-
-    private async Task<bool> OfferTidalLaunchAsync()
-    {
-        const string promptMessage = "TIDAL wurde nicht mit den benötigten Startparametern gestartet.";
-
-        while (true)
-        {
-            var launcherPath = TidalLaunchService.FindLauncherExecutable();
-            var dialog = new TidalLaunchDialog(promptMessage, launcherPath)
+            switch (result)
             {
-                Owner = Application.Current.MainWindow
-            };
-
-            if (dialog.ShowDialog() != true)
-            {
-                return false;
+                case TidalBootstrapResult.Success:
+                    break;
+                case TidalBootstrapResult.TidalNotFound:
+                    throw new TidalCdpUserException(
+                        "TIDAL.exe wurde auf diesem PC nicht gefunden.\n\n" +
+                        $"Erwartet unter:\n{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\TIDAL\\app-*\\TIDAL.exe");
+                case TidalBootstrapResult.CloseFailed:
+                    throw new TidalCdpUserException(
+                        "TIDAL konnte nicht vollständig beendet werden.\n\n" +
+                        "Bitte TIDAL manuell schließen und erneut auf „Restart TIDAL“ klicken.");
+                case TidalBootstrapResult.CdpTimeout:
+                    throw new TidalCdpUserException(
+                        "TIDAL antwortet nicht rechtzeitig auf dem Debug-Port.\n\n" +
+                        "Bitte erneut versuchen, sobald TIDAL vollständig geladen ist.");
+                default:
+                    throw new TidalCdpUserException("TIDAL konnte nicht neu gestartet werden.");
             }
 
-            if (dialog.Result == TidalLaunchDialogResult.LaunchLauncher && launcherPath is not null)
+            var health = await _tidalCdp.CheckHealthAsync();
+            if (!health.IsReady)
             {
-                TidalLaunchService.StartLauncherExecutable(launcherPath);
-                return false;
+                throw new TidalCdpUserException(health.UserMessage);
             }
 
-            if (dialog.Result != TidalLaunchDialogResult.AutoStart)
-            {
-                return false;
-            }
-
-            try
-            {
-                IsBusy = true;
-                var outcome = await _tidalLaunch.StartTidalAndWaitForCdpAsync();
-                switch (outcome)
-                {
-                    case TidalLaunchOutcome.Success:
-                        return true;
-                    case TidalLaunchOutcome.TidalAlreadyRunningNeedsClose:
-                        MessageBox.Show(
-                            "TIDAL läuft bereits ohne Debug-Port.\n\n" +
-                            "Bitte TIDAL vollständig schließen und erneut auf „Automatisch starten“ klicken.",
-                            "TIDAL-Verbindung",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
-                        break;
-                    case TidalLaunchOutcome.TidalNotFound:
-                        MessageBox.Show(
-                            "TIDAL.exe wurde auf diesem PC nicht gefunden.\n\n" +
-                            $"Erwartet unter:\n{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}\\TIDAL\\app-*\\TIDAL.exe",
-                            "TIDAL-Verbindung",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                        return false;
-                    case TidalLaunchOutcome.Timeout:
-                        MessageBox.Show(
-                            "TIDAL antwortet nicht rechtzeitig auf dem Debug-Port.\n\n" +
-                            "Bitte erneut versuchen, sobald TIDAL vollständig geladen ist.",
-                            "TIDAL-Verbindung",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Warning);
-                        break;
-                }
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
+            ReloadDevicesPreserveSelection();
+            StatusText = "TIDAL neu gestartet — bereit.";
+            StartupLogger.Log("TIDAL restart completed from UI");
+        });
     }
 
     private Task LoadDevicesAsync()
@@ -552,17 +494,16 @@ public sealed class MainViewModel : INotifyPropertyChanged
             StatusText = busyText;
             await action();
         }
-        catch (TidalCdpUserException)
+        catch (TidalCdpUserException ex)
         {
-            if (await OfferTidalLaunchAsync())
-            {
-                IsBusy = true;
-                StatusText = busyText;
-                await action();
-                return;
-            }
-
-            StatusText = "TIDAL-Verbindung nicht verfügbar.";
+            StartupLogger.Log($"TIDAL CDP runtime failure: {ex.Message}");
+            StatusText = "TIDAL-Verbindung unterbrochen.";
+            AppendLog(ex.Message);
+            MessageBox.Show(
+                ex.Message,
+                "TIDAL-Verbindung",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
         catch (Exception ex)
         {
@@ -591,6 +532,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         (MusicModeCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
         (NormalModeCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
         (ToggleModeCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
+        (RestartTidalCommand as AsyncRelayCommand)?.RaiseCanExecuteChanged();
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

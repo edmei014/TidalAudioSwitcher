@@ -4,10 +4,10 @@
         xmlns:local="clr-namespace:TidalAudioSwitcher.App"
         Title="Tidal Audio Switcher"
         Icon="/Assets/app.ico"
-        Height="210"
-        Width="720"
-        MinHeight="180"
-        MinWidth="600"
+        Height="230"
+        Width="820"
+        MinHeight="200"
+        MinWidth="680"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -19,29 +19,98 @@
         <local:InverseBooleanConverter x:Key="InverseBool" />
         <local:BooleanToVisibilityConverter x:Key="BoolToVis" />
 
-        <Style x:Key="HeaderCloseButton" TargetType="Button">
+        <!-- Windows-style caption buttons (46×32, native hover) -->
+        <Style x:Key="TitleBarButton" TargetType="Button">
+            <Setter Property="Width" Value="46" />
+            <Setter Property="Height" Value="32" />
             <Setter Property="Background" Value="Transparent" />
-            <Setter Property="Foreground" Value="#AAAAAA" />
+            <Setter Property="Foreground" Value="#CCCCCC" />
             <Setter Property="BorderThickness" Value="0" />
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="FontSize" Value="16" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
             <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="CloseChrome"
-                                Background="{TemplateBinding Background}">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
                         </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TitleBarMinimizeButton" TargetType="Button">
+            <Setter Property="Width" Value="46" />
+            <Setter Property="Height" Value="32" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="Transparent"
+                                SnapsToDevicePixels="True"
+                                UseLayoutRounding="True">
+                            <Grid HorizontalAlignment="Stretch"
+                                  VerticalAlignment="Stretch">
+                                <Rectangle x:Name="MinimizeIcon"
+                                           Width="11"
+                                           Height="2"
+                                           Fill="#CCCCCC"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           SnapsToDevicePixels="True"
+                                           RenderOptions.EdgeMode="Aliased" />
+                            </Grid>
+                        </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="CloseChrome" Property="Background" Value="#33FFFFFF" />
-                                <Setter Property="Foreground" Value="#F0F0F0" />
+                                <Setter TargetName="Root" Property="Background" Value="#19FFFFFF" />
+                                <Setter TargetName="MinimizeIcon" Property="Fill" Value="#FFFFFF" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="CloseChrome" Property="Background" Value="#22FFFFFF" />
+                                <Setter TargetName="Root" Property="Background" Value="#0FFFFFFF" />
+                                <Setter TargetName="MinimizeIcon" Property="Fill" Value="#FFFFFF" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="TitleBarCloseButton" TargetType="Button" BasedOn="{StaticResource TitleBarButton}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                SnapsToDevicePixels="True">
+                            <TextBlock x:Name="Glyph"
+                                       Text="&#xE8BB;"
+                                       FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets, Segoe UI Symbol"
+                                       FontSize="10"
+                                       Foreground="{TemplateBinding Foreground}"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Margin="0,0,0,1" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#E81123" />
+                                <Setter TargetName="Glyph" Property="Foreground" Value="#FFFFFF" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#B10A1C" />
+                                <Setter TargetName="Glyph" Property="Foreground" Value="#FFFFFF" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -110,7 +179,8 @@
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0"
-                  Background="#252525">
+                  Background="#252525"
+                  Height="32">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
@@ -118,20 +188,26 @@
 
                 <Border Grid.Column="0"
                         Background="Transparent"
-                        Padding="16,8"
+                        Padding="12,0,0,0"
                         Cursor="SizeAll"
                         MouseLeftButtonDown="ExpandedDragHeader_MouseLeftButtonDown">
                     <TextBlock Text="Tidal Audio Switcher"
-                               FontSize="14"
-                               FontWeight="SemiBold"
+                               FontSize="12"
+                               FontWeight="Normal"
                                VerticalAlignment="Center" />
                 </Border>
 
-                <Button Grid.Column="1"
-                        Style="{StaticResource HeaderCloseButton}"
-                        Content="×"
-                        Click="CloseWindow_Click"
-                        ToolTip="Schließen" />
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Top">
+                    <Button Style="{StaticResource TitleBarMinimizeButton}"
+                            Content="{x:Null}"
+                            Click="MinimizeWindow_Click"
+                            ToolTip="Minimieren" />
+                    <Button Style="{StaticResource TitleBarCloseButton}"
+                            Click="CloseWindow_Click"
+                            ToolTip="Schließen" />
+                </StackPanel>
 
                 <Border Grid.ColumnSpan="2"
                         VerticalAlignment="Bottom"
@@ -145,9 +221,19 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+            <ProgressBar Grid.Row="0"
+                         Height="3"
+                         Margin="0,0,0,10"
+                         IsIndeterminate="True"
+                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                         Background="#333333"
+                         Foreground="#2D6A4F"
+                         BorderThickness="0" />
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
                 <TextBlock Text="TIDAL Device"
                            VerticalAlignment="Center"
                            Width="110" />
@@ -159,7 +245,7 @@
                           IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}" />
             </StackPanel>
 
-            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,12">
+            <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,0,0,12">
                 <TextBlock Text="Silent Device"
                            VerticalAlignment="Center"
                            Width="110" />
@@ -171,28 +257,35 @@
                           IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}" />
             </StackPanel>
 
-            <StackPanel Grid.Row="2"
-                        Margin="110,0,0,0"
-                        Orientation="Horizontal">
+            <WrapPanel Grid.Row="3"
+                       Margin="110,0,0,0">
                 <Button Content="Music Mode"
                         Style="{StaticResource MusicModeButton}"
                         Command="{Binding MusicModeCommand}"
                         Padding="16,8"
-                        Margin="0,0,8,0"
+                        Margin="0,0,8,8"
                         IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
                         ToolTip="Silent Device → Windows-Standard, dann TIDAL exclusive" />
                 <Button Content="Normal Mode"
                         Style="{StaticResource NormalModeButton}"
                         Command="{Binding NormalModeCommand}"
                         Padding="16,8"
-                        Margin="0,0,8,0"
+                        Margin="0,0,8,8"
                         IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
                         ToolTip="TIDAL shared, Windows-Standard auf TIDAL Device" />
                 <Button Content="Compact Mode"
                         Click="EnterCompactView_Click"
                         Padding="16,8"
+                        Margin="0,0,8,8"
                         ToolTip="Fenster verkleinern — Always-On-Top mit Music-Toggle" />
-            </StackPanel>
+                <Button x:Name="RestartTidalButton"
+                        Content="Restart TIDAL"
+                        Command="{Binding RestartTidalCommand}"
+                        Padding="16,8"
+                        Margin="0,0,8,8"
+                        IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
+                        ToolTip="TIDAL schließen und mit Debug-Port neu starten" />
+            </WrapPanel>
             </Grid>
         </Grid>
 
