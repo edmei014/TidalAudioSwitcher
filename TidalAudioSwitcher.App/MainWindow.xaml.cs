@@ -8,8 +8,9 @@ namespace TidalAudioSwitcher.App;
 
 public partial class MainWindow : Window
 {
-    private const string PathStartupCompact = "A-startup";
-    private const string PathRuntimeCompact = "B-runtime";
+    private const string PathExpandedStartup = "A-expanded";
+    private const string PathCompactStartup = "B-startup";
+    private const string PathRuntimeCompact = "A-runtime-compact";
     private const double CompactWidth = 144;
     private const double CompactHeight = 54;
     private const double DefaultExpandedWidth = 820;
@@ -22,16 +23,17 @@ public partial class MainWindow : Window
     public MainWindow(bool startCompact = false)
     {
         _startCompactRequested = startCompact;
-        StartupLogger.Log("MainWindow ctor Begin");
+        WindowLifecycleTrace.Log(this, "startup", "MainWindow.ctor:begin");
         try
         {
             InitializeComponent();
-            StartupLogger.Log("MainWindow InitializeComponent OK");
+            WindowLifecycleTrace.Log(this, "startup", "MainWindow.ctor:after-InitializeComponent");
 
             DataContext = ((App)Application.Current).Services.ViewModel;
+            SourceInitialized += OnSourceInitialized;
             Loaded += OnLoaded;
             Closing += (_, _) => PersistWindowState();
-            StartupLogger.Log("MainWindow ctor Complete");
+            WindowLifecycleTrace.Log(this, "startup", "MainWindow.ctor:complete");
         }
         catch (Exception ex)
         {
@@ -40,30 +42,40 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnSourceInitialized(object? sender, EventArgs e)
+    {
+        WindowLifecycleTrace.Log(this, "startup", "SourceInitialized");
+    }
+
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
+        WindowLifecycleTrace.Log(this, "startup", "Loaded:begin");
         try
         {
+            WindowLifecycleTrace.Log(this, "startup", "Loaded:before-InitializeAsync");
             await ((App)Application.Current).Services.InitializeAsync();
+            WindowLifecycleTrace.Log(this, "startup", "Loaded:after-InitializeAsync");
 
             var settings = ((App)Application.Current).Services.Settings.Load();
-            RestoreWindowPlacement(settings);
-            WindowStateDiagnostics.Log(this, PathStartupCompact, "OnLoaded:before-EnterCompactView", settings.CompactMode);
+            var lifecyclePath = _startCompactRequested || settings.CompactMode
+                ? PathCompactStartup
+                : PathExpandedStartup;
 
-            if (DataContext is MainViewModel vm
-                && (_startCompactRequested || vm.IsCompactView))
+            RestoreWindowPlacement(settings, lifecyclePath);
+            WindowLifecycleTrace.Log(this, lifecyclePath, "Loaded:after-RestoreWindowPlacement");
+
+            var startupCompact = _startCompactRequested || settings.CompactMode;
+            if (startupCompact)
             {
-                EnterCompactView(PathStartupCompact);
+                ScheduleStartupCompactTransition();
             }
             else
             {
-                WindowStateDiagnostics.Log(
-                    this,
-                    PathStartupCompact,
-                    $"OnLoaded:EnterCompactView-skipped(startCompact={_startCompactRequested},vmCompact={(DataContext is MainViewModel m && m.IsCompactView)})",
-                    settings.CompactMode);
-                ApplyInitialForegroundDeferred();
+                WindowLifecycleTrace.Log(this, lifecyclePath, "Loaded:expanded-startup");
+                ApplyInitialForegroundDeferred(lifecyclePath);
             }
+
+            WindowLifecycleTrace.Log(this, lifecyclePath, "Loaded:end");
         }
         catch (Exception ex)
         {
@@ -76,63 +88,65 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ApplyInitialForegroundDeferred()
+    protected override void OnContentRendered(EventArgs e)
     {
-        Dispatcher.BeginInvoke(ApplyInitialForeground, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+        base.OnContentRendered(e);
+        WindowLifecycleTrace.Log(this, "startup", "ContentRendered");
     }
 
-    private void ApplyInitialForeground()
+    private void ApplyInitialForegroundDeferred(string path)
     {
+        Dispatcher.BeginInvoke(() => ApplyInitialForeground(path), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+    }
+
+    private void ApplyInitialForeground(string path)
+    {
+        WindowLifecycleTrace.Log(this, path, "ApplyInitialForeground:begin");
         if (_initialForegroundApplied)
         {
             return;
         }
 
-        if (DataContext is MainViewModel { IsCompactView: true })
-        {
-            return;
-        }
-
-        if (WindowForegroundHelper.TryBringToForeground(this, persistentTopmost: false))
+        if (WindowForegroundHelper.TryBringToForeground(this, path, "ApplyInitialForeground", persistentTopmost: false))
         {
             _initialForegroundApplied = true;
-            StartupLogger.Log("Window foreground applied (compact=false)");
-            return;
+            WindowLifecycleTrace.Log(this, path, "ApplyInitialForeground:applied");
         }
-
-        Dispatcher.BeginInvoke(ApplyInitialForeground, System.Windows.Threading.DispatcherPriority.Loaded);
+        else
+        {
+            Dispatcher.BeginInvoke(() => ApplyInitialForeground(path), System.Windows.Threading.DispatcherPriority.Loaded);
+        }
     }
 
     private void BringCompactToForeground(string path)
     {
-        WindowStateDiagnostics.Log(this, path, "BringCompactToForeground:scheduled");
+        WindowLifecycleTrace.Log(this, path, "BringCompactToForeground:scheduled");
 
         void Apply()
         {
-            WindowStateDiagnostics.Log(this, path, "BringCompactToForeground:before");
-            WindowForegroundHelper.BringToForeground(this, persistentTopmost: true);
-            WindowStateDiagnostics.Log(this, path, "BringCompactToForeground:after");
+            WindowLifecycleTrace.Log(this, path, "BringCompactToForeground:before");
+            WindowForegroundHelper.BringToForeground(this, path, "BringCompactToForeground", persistentTopmost: true);
+            TaskbarIconHelper.ApplyExeIcon(this, path, "BringCompactToForeground");
+            WindowLifecycleTrace.Log(this, path, "BringCompactToForeground:after");
 
             if (new System.Windows.Interop.WindowInteropHelper(this).Handle == nint.Zero)
             {
-                WindowStateDiagnostics.Log(this, path, "BringCompactToForeground:retry-no-hwnd");
+                WindowLifecycleTrace.Log(this, path, "BringCompactToForeground:retry-no-hwnd");
                 Dispatcher.BeginInvoke(Apply, System.Windows.Threading.DispatcherPriority.Loaded);
-                return;
             }
-
-            var settledTimer = new System.Windows.Threading.DispatcherTimer
-            {
-                Interval = TimeSpan.FromMilliseconds(500)
-            };
-            settledTimer.Tick += (_, _) =>
-            {
-                settledTimer.Stop();
-                WindowStateDiagnostics.Log(this, path, "BringCompactToForeground:settled-500ms");
-            };
-            settledTimer.Start();
         }
 
         Dispatcher.BeginInvoke(Apply, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+    }
+
+    private void ScheduleStartupCompactTransition()
+    {
+        // Defer until after OnLoaded returns so ContentRendered completes with expanded UI,
+        // matching path A before the user manually enters compact mode.
+        WindowLifecycleTrace.Log(this, PathCompactStartup, "ScheduleStartupCompactTransition");
+        Dispatcher.BeginInvoke(
+            () => EnterCompactView(PathCompactStartup),
+            System.Windows.Threading.DispatcherPriority.ApplicationIdle);
     }
 
     private void EnterCompactView_Click(object sender, RoutedEventArgs e) => EnterCompactView(PathRuntimeCompact);
@@ -141,29 +155,30 @@ public partial class MainWindow : Window
 
     private void EnterCompactView(string path)
     {
-        WindowStateDiagnostics.Log(this, path, "EnterCompactView:begin");
+        WindowLifecycleTrace.Log(this, path, "EnterCompactView:begin");
 
         if (DataContext is MainViewModel vm && vm.IsCompactView && ResizeMode == ResizeMode.NoResize)
         {
-            WindowStateDiagnostics.Log(this, path, "EnterCompactView:branch=early-return");
+            WindowLifecycleTrace.Log(this, path, "EnterCompactView:branch=early-return");
             ApplyCompactChrome(path);
             BringCompactToForeground(path);
-            WindowStateDiagnostics.Log(this, path, "EnterCompactView:end");
+            WindowLifecycleTrace.Log(this, path, "EnterCompactView:end");
             return;
         }
 
-        WindowStateDiagnostics.Log(this, path, "EnterCompactView:branch=full");
+        WindowLifecycleTrace.Log(this, path, "EnterCompactView:branch=full");
         _expandedSnapshot = WindowLayoutSnapshot.Capture(this);
         ApplyCompactChrome(path);
 
         if (DataContext is MainViewModel viewModel)
         {
+            WindowLifecycleTrace.Log(this, path, "EnterCompactView:set-IsCompactView=true");
             viewModel.IsCompactView = true;
         }
 
         PersistWindowState();
         BringCompactToForeground(path);
-        WindowStateDiagnostics.Log(this, path, "EnterCompactView:end");
+        WindowLifecycleTrace.Log(this, path, "EnterCompactView:end");
     }
 
     private void ExitCompactView()
@@ -206,7 +221,7 @@ public partial class MainWindow : Window
 
     private void ApplyCompactChrome(string path)
     {
-        WindowStateDiagnostics.Log(this, path, "ApplyCompactChrome:before");
+        WindowLifecycleTrace.Log(this, path, "ApplyCompactChrome:before");
         Background = System.Windows.Media.Brushes.Transparent;
         Topmost = true;
         ResizeMode = ResizeMode.NoResize;
@@ -215,7 +230,8 @@ public partial class MainWindow : Window
         Width = CompactWidth;
         Height = CompactHeight;
         SizeToContent = SizeToContent.Manual;
-        WindowStateDiagnostics.Log(this, path, "ApplyCompactChrome:after");
+        TaskbarIconHelper.ApplyExeIcon(this, path, "ApplyCompactChrome");
+        WindowLifecycleTrace.Log(this, path, "ApplyCompactChrome:after");
     }
 
     private void CompactDragHeader_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -239,8 +255,9 @@ public partial class MainWindow : Window
 
     private void MinimizeWindow_Click(object sender, RoutedEventArgs e) => WindowState = WindowState.Minimized;
 
-    private void RestoreWindowPlacement(AppSettings settings)
+    private void RestoreWindowPlacement(AppSettings settings, string path)
     {
+        WindowLifecycleTrace.Log(this, path, "RestoreWindowPlacement:begin");
         var isCompact = settings.CompactMode || _startCompactRequested;
         var width = isCompact
             ? CompactWidth
@@ -275,6 +292,8 @@ public partial class MainWindow : Window
             StartupLogger.Log(
                 $"Window restore: fallback CenterScreen (saved=({settings.WindowLeft}, {settings.WindowTop}))");
         }
+
+        WindowLifecycleTrace.Log(this, path, "RestoreWindowPlacement:end");
     }
 
     internal void PersistWindowState()

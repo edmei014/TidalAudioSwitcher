@@ -9,6 +9,7 @@
     <AssemblyName>TidalAudioSwitcher</AssemblyName>
     <RootNamespace>TidalAudioSwitcher.Launcher</RootNamespace>
     <Description>Tidal Audio Switcher</Description>
+    <ApplicationIcon>..\Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <Target Name="BuildUiApp" BeforeTargets="CopyUiApp">

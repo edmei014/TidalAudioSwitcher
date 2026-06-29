@@ -26,7 +26,8 @@ internal static class TidalLauncherBootstrap
             return 1;
         }
 
-        if (TidalBootstrap.FindTidalExecutable() is null)
+        var tidalExe = TidalBootstrap.FindTidalExecutable();
+        if (tidalExe is null)
         {
             MessageBox.Show(
                 "TIDAL.exe wurde auf diesem PC nicht gefunden.\n\n" +
@@ -49,7 +50,7 @@ internal static class TidalLauncherBootstrap
                 return 0;
             }
 
-            if (!TidalBootstrap.CloseTidalGracefullyAsync().GetAwaiter().GetResult())
+            if (!TidalBootstrap.CloseTidalGracefullyAsync().ConfigureAwait(false).GetAwaiter().GetResult())
             {
                 MessageBox.Show(
                     "TIDAL konnte nicht vollständig beendet werden.\n\nBitte TIDAL manuell schließen und erneut starten.",
@@ -60,41 +61,25 @@ internal static class TidalLauncherBootstrap
             }
         }
 
-        return StartTidalAndUi(uiPath);
-    }
+        TidalBootstrap.StartTidal(tidalExe);
 
-    private static bool ConfirmTidalRestart()
-    {
-        var dialog = new TidalAlreadyRunningDialog();
-        return dialog.ShowDialog() == true && dialog.RestartRequested;
-    }
-
-    private static int StartTidalAndUi(string uiPath)
-    {
         var waitWindow = new TidalWaitWindow();
         waitWindow.Show();
         try
         {
             var progress = new Progress<string>(waitWindow.SetStatus);
-            var result = TidalBootstrap.RestartTidalAsync(progress, TimeSpan.FromSeconds(45))
+            var ready = TidalBootstrap.WaitForCdpAsync(
+                    TimeSpan.FromSeconds(45),
+                    progress)
+                .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult();
 
-            if (result == TidalBootstrapResult.CdpTimeout)
+            if (!ready)
             {
                 MessageBox.Show(
                     "TIDAL antwortet nicht rechtzeitig auf dem Debug-Port.\n\n" +
                     "Bitte erneut versuchen, sobald TIDAL vollständig geladen ist.",
-                    "Tidal Audio Switcher",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                return 1;
-            }
-
-            if (result != TidalBootstrapResult.Success)
-            {
-                MessageBox.Show(
-                    "TIDAL konnte nicht gestartet werden.",
                     "Tidal Audio Switcher",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -110,6 +95,12 @@ internal static class TidalLauncherBootstrap
                 waitWindow.Close();
             }
         }
+    }
+
+    private static bool ConfirmTidalRestart()
+    {
+        var dialog = new TidalAlreadyRunningDialog();
+        return dialog.ShowDialog() == true && dialog.RestartRequested;
     }
 
     private static int StartUi(string uiPath, TidalWaitWindow? waitWindow)

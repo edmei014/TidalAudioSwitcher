@@ -219,8 +219,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
             RestoreDeviceSelection(saved);
 
             ActiveMode = saved.ActiveMode;
-            SetField(ref _isCompactView, saved.CompactMode);
-            OnPropertyChanged(nameof(IsCompactView));
+            // Compact UI is activated only via MainWindow.EnterCompactView so startup
+            // matches the runtime Expanded→Compact sequence (ApplyCompactChrome first).
+            StartupLogger.Log($"Device restore: saved CompactMode={saved.CompactMode} (UI stays expanded until EnterCompactView)");
 
             StatusText = $"{WindowsDevices.Count} Windows-Audiogerät(e) geladen.";
             return Task.CompletedTask;

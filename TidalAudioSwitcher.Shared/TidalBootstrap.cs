@@ -108,7 +108,7 @@ public static class TidalBootstrap
                 return true;
             }
 
-            await Task.Delay(250, cancellationToken);
+            await Task.Delay(250, cancellationToken).ConfigureAwait(false);
         }
 
         return await ForceCloseTidalAsync(cancellationToken);
@@ -131,7 +131,7 @@ public static class TidalBootstrap
             }
 
             progress?.Report("Warte auf TIDAL-Verbindung …");
-            await Task.Delay(1000, cancellationToken);
+            await Task.Delay(1000, cancellationToken).ConfigureAwait(false);
         }
 
         return false;
@@ -250,7 +250,7 @@ public static class TidalBootstrap
                 return true;
             }
 
-            await Task.Delay(250, cancellationToken);
+            await Task.Delay(250, cancellationToken).ConfigureAwait(false);
         }
 
         return !IsTidalRunning();

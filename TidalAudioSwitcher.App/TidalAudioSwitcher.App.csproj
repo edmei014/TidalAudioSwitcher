@@ -10,6 +10,7 @@
     <AssemblyName>TidalAudioSwitcher.UI</AssemblyName>
     <Description>Tidal Audio Switcher UI</Description>
     <StartupObject>TidalAudioSwitcher.App.App</StartupObject>
+    <ApplicationIcon>..\Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>

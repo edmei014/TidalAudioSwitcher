@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>TidalAudioSwitcher.Shared</RootNamespace>
     <AssemblyName>TidalAudioSwitcher.Shared</AssemblyName>
+    <ApplicationIcon />
   </PropertyGroup>
 
 </Project>

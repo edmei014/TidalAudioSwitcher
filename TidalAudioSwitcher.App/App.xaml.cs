@@ -47,7 +47,9 @@ public partial class App : System.Windows.Application
             var window = new MainWindow(startCompact);
             MainWindow = window;
             window.ContentRendered += OnMainWindowContentRendered;
+            WindowLifecycleTrace.Log(window, startCompact ? "B-startup" : "A-expanded", "App.Show():before");
             window.Show();
+            WindowLifecycleTrace.Log(window, startCompact ? "B-startup" : "A-expanded", "App.Show():after");
 
             StartupLogger.Log("OnStartup Complete");
         }
