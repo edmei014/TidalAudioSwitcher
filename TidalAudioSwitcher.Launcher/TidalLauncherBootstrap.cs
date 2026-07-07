@@ -8,14 +8,14 @@ namespace TidalAudioSwitcher.Launcher;
 
 internal static class TidalLauncherBootstrap
 {
-    private const string UiExeName = "TidalAudioSwitcher.UI.exe";
-
     [DllImport("user32.dll")]
     private static extern bool AllowSetForegroundWindow(int dwProcessId);
 
     public static int Run()
     {
-        var uiPath = Path.Combine(AppContext.BaseDirectory, UiExeName);
+        ShellIntegration.SetAppUserModelId();
+
+        var uiPath = Path.Combine(AppContext.BaseDirectory, ApplicationEntryConstants.UiExeName);
         if (!File.Exists(uiPath))
         {
             MessageBox.Show(
@@ -110,6 +110,7 @@ internal static class TidalLauncherBootstrap
         var process = Process.Start(new ProcessStartInfo
         {
             FileName = uiPath,
+            Arguments = ApplicationEntryConstants.LaunchedByLauncherArgument,
             WorkingDirectory = Path.GetDirectoryName(uiPath)!,
             UseShellExecute = true
         });

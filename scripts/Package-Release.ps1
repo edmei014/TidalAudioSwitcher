@@ -67,6 +67,17 @@ else {
 Copy-Item (Join-Path $Root "README.md") $DistRoot
 Copy-Item (Join-Path $Root "DISTRIBUTION.md") $DistRoot
 
+$launcherExe = Join-Path $DistRoot "TidalAudioSwitcher.exe"
+$shortcutPath = Join-Path $DistRoot "Tidal Audio Switcher.lnk"
+$shell = New-Object -ComObject WScript.Shell
+$shortcut = $shell.CreateShortcut($shortcutPath)
+$shortcut.TargetPath = $launcherExe
+$shortcut.WorkingDirectory = $DistRoot
+$shortcut.IconLocation = "$launcherExe,0"
+$shortcut.Description = "Tidal Audio Switcher"
+$shortcut.Save()
+Write-Host "Shortcut: $shortcutPath -> TidalAudioSwitcher.exe"
+
 @'
 @echo off
 cd /d "%~dp0"

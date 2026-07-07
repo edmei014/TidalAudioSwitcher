@@ -13,7 +13,7 @@ internal static class UiReadyHandshake
         }
         catch (WaitHandleCannotBeOpenedException)
         {
-            // UI started directly without launcher — no waiter registered.
+            // Launcher did not register a waiter (should not happen when --launched-by-launcher is set).
         }
     }
 }

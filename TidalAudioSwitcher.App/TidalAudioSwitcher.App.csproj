@@ -9,7 +9,7 @@
     <RootNamespace>TidalAudioSwitcher.App</RootNamespace>
     <AssemblyName>TidalAudioSwitcher.UI</AssemblyName>
     <Description>Tidal Audio Switcher UI</Description>
-    <StartupObject>TidalAudioSwitcher.App.App</StartupObject>
+    <StartupObject>TidalAudioSwitcher.App.Program</StartupObject>
     <ApplicationIcon>..\Assets\app.ico</ApplicationIcon>
   </PropertyGroup>
 
