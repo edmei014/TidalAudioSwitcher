@@ -27,6 +27,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _isBusy;
     private bool _initialized;
     private bool _suppressSettingsSave;
+    private bool _tidalDeviceSelectionReady;
+    private string? _committedTidalDeviceId;
     private bool _isCompactView;
 
     public MainViewModel(
@@ -71,6 +73,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 RefreshSilentDeviceFilter();
                 RaiseCanExecuteChanged();
                 PersistDeviceSelection();
+                ScheduleNormalModeAfterTidalDeviceChange(value);
             }
         }
     }
@@ -255,12 +258,47 @@ public sealed class MainViewModel : INotifyPropertyChanged
         RefreshAllDeviceFilters();
         NotifyDeviceSelectionChanged();
         PersistDeviceSelection(logRestore: true);
+        _committedTidalDeviceId = tidal?.Id;
+        _tidalDeviceSelectionReady = true;
     }
 
     private void NotifyDeviceSelectionChanged()
     {
         OnPropertyChanged(nameof(SelectedTidalDevice));
         OnPropertyChanged(nameof(SelectedSilentDevice));
+    }
+
+    /// <summary>
+    /// After a manual TIDAL Device change, apply Normal Mode so Windows default + TIDAL shared
+    /// follow the new selection without requiring the Normal Mode button.
+    /// Skips startup restore, filter flicker (same Id), and busy/in-progress states.
+    /// </summary>
+    private void ScheduleNormalModeAfterTidalDeviceChange(AudioEndpoint? device)
+    {
+        if (!_tidalDeviceSelectionReady
+            || _suppressSettingsSave
+            || IsBusy
+            || device is null
+            || string.Equals(_committedTidalDeviceId, device.Id, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _committedTidalDeviceId = device.Id;
+
+        // Defer so ComboBox binding can finish before we start the mode switch.
+        Application.Current.Dispatcher.BeginInvoke(new Action(() =>
+        {
+            if (!_tidalDeviceSelectionReady
+                || IsBusy
+                || SelectedTidalDevice is null
+                || !string.Equals(SelectedTidalDevice.Id, device.Id, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            _ = ApplyModeAsync(AudioMode.Normal);
+        }));
     }
 
     private AudioEndpoint? ResolveDevice(string? savedId, AudioEndpoint? fallback, string label)
@@ -408,6 +446,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 string.Equals(d.Id, tidalId, StringComparison.OrdinalIgnoreCase));
             _selectedSilentDevice = WindowsDevices.FirstOrDefault(d =>
                 string.Equals(d.Id, silentId, StringComparison.OrdinalIgnoreCase));
+            _committedTidalDeviceId = _selectedTidalDevice?.Id;
         }
         finally
         {
