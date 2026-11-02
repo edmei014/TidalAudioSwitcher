@@ -65,7 +65,6 @@ else {
 }
 
 Copy-Item (Join-Path $Root "README.md") $DistRoot
-Copy-Item (Join-Path $Root "DISTRIBUTION.md") $DistRoot
 
 $launcherExe = Join-Path $DistRoot "TidalAudioSwitcher.exe"
 $shortcutPath = Join-Path $DistRoot "Tidal Audio Switcher.lnk"

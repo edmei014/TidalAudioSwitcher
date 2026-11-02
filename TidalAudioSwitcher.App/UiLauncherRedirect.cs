@@ -17,7 +17,7 @@ internal static class UiLauncherRedirect
             return false;
         }
 
-        var launcherPath = ResolveLauncherPath();
+        var launcherPath = ApplicationPaths.ResolveLauncherExe();
         if (launcherPath is null)
         {
             StartupLogger.Log(
@@ -41,44 +41,4 @@ internal static class UiLauncherRedirect
     public static bool WasLaunchedByLauncher(string[] args) =>
         args.Any(arg =>
             string.Equals(arg, ApplicationEntryConstants.LaunchedByLauncherArgument, StringComparison.OrdinalIgnoreCase));
-
-    /// <summary>
-    /// Prefer the launcher sitting next to the UI (release layout). For development builds
-    /// where only TidalAudioSwitcher.UI.exe is in App/bin, resolve the sibling Launcher output.
-    /// </summary>
-    private static string? ResolveLauncherPath()
-    {
-        var adjacent = Path.Combine(AppContext.BaseDirectory, ApplicationEntryConstants.LauncherExeName);
-        if (File.Exists(adjacent))
-        {
-            return adjacent;
-        }
-
-        var baseDir = new DirectoryInfo(AppContext.BaseDirectory);
-        // .../TidalAudioSwitcher.App/bin/{Configuration}/net8.0-windows
-        var configuration = baseDir.Parent?.Name ?? "Release";
-        var solutionDir = baseDir.Parent?.Parent?.Parent?.Parent;
-        if (solutionDir is null)
-        {
-            return null;
-        }
-
-        foreach (var config in new[] { configuration, "Release", "Debug" }.Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            var candidate = Path.Combine(
-                solutionDir.FullName,
-                "TidalAudioSwitcher.Launcher",
-                "bin",
-                config,
-                "net8.0-windows",
-                ApplicationEntryConstants.LauncherExeName);
-
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        return null;
-    }
 }

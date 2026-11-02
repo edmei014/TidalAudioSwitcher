@@ -44,6 +44,15 @@ public partial class MainWindow : Window
 
     private void OnSourceInitialized(object? sender, EventArgs e)
     {
+        var hwnd = new System.Windows.Interop.WindowInteropHelper(this).Handle;
+        var launcherPath = TidalAudioSwitcher.Shared.ApplicationPaths.ResolveLauncherExe();
+        var identityApplied = TidalAudioSwitcher.Shared.ShellIntegration.ApplyWindowTaskbarIdentity(hwnd);
+        StartupLogger.Log(
+            $"[TaskbarIdentity] hwnd=0x{hwnd:X} " +
+            $"process={Environment.ProcessPath ?? "(null)"} " +
+            $"launcher={launcherPath ?? "(null)"} " +
+            $"aumid={TidalAudioSwitcher.Shared.ApplicationEntryConstants.AppUserModelId} " +
+            $"applied={identityApplied}");
         WindowLifecycleTrace.Log(this, "startup", "SourceInitialized");
     }
 
@@ -126,7 +135,6 @@ public partial class MainWindow : Window
         {
             WindowLifecycleTrace.Log(this, path, "BringCompactToForeground:before");
             WindowForegroundHelper.BringToForeground(this, path, "BringCompactToForeground", persistentTopmost: true);
-            TaskbarIconHelper.ApplyExeIcon(this, path, "BringCompactToForeground");
             WindowLifecycleTrace.Log(this, path, "BringCompactToForeground:after");
 
             if (new System.Windows.Interop.WindowInteropHelper(this).Handle == nint.Zero)
@@ -230,7 +238,6 @@ public partial class MainWindow : Window
         Width = CompactWidth;
         Height = CompactHeight;
         SizeToContent = SizeToContent.Manual;
-        TaskbarIconHelper.ApplyExeIcon(this, path, "ApplyCompactChrome");
         WindowLifecycleTrace.Log(this, path, "ApplyCompactChrome:after");
     }
 
